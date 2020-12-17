@@ -1,5 +1,7 @@
 package quadtree
 
+import "math"
+
 // Point represents a point in a 2-dimensional space
 type Point struct {
 	X int
@@ -16,6 +18,14 @@ type Boundary struct {
 // ContainsPoint checks whether a point inside the boundary
 func (b *Boundary) ContainsPoint(p *Point) bool {
 	return (p.X >= b.Start.X && p.X < b.Start.X+b.Width && p.Y >= b.Start.Y && p.Y < b.Start.Y+b.Height)
+}
+
+// IntersectsWith checks whether two boundaries are intersect with each other
+func (b *Boundary) IntersectsWith(bound *Boundary) bool {
+	return !(b.Start.X >= bound.Start.X+bound.Width ||
+		bound.Start.X >= b.Start.X+b.Width ||
+		b.Start.Y >= bound.Start.Y+bound.Height ||
+		bound.Start.Y >= b.Start.Y+b.Height)
 }
 
 // Node represents a Quadtree node
@@ -36,6 +46,8 @@ func (n *Node) Subdivide() {
 	var p *Point
 	w := n.Boundary.Width / 2
 	h := n.Boundary.Height / 2
+	ww := int(math.Ceil(float64(n.Boundary.Width) / 2))
+	hh := int(math.Ceil(float64(n.Boundary.Height) / 2))
 	origin := n.Boundary.Start
 
 	p = &Point{X: origin.X + w, Y: origin.Y}
@@ -43,15 +55,15 @@ func (n *Node) Subdivide() {
 	n.NorthWest = &Node{Boundary: b, Capacity: n.Capacity}
 
 	p = &Point{X: origin.X, Y: origin.Y}
-	b = &Boundary{Width: w, Height: h, Start: p}
+	b = &Boundary{Width: ww, Height: h, Start: p}
 	n.NorthEast = &Node{Boundary: b, Capacity: n.Capacity}
 
 	p = &Point{X: origin.X + w, Y: origin.Y + h}
-	b = &Boundary{Width: w, Height: h, Start: p}
+	b = &Boundary{Width: w, Height: hh, Start: p}
 	n.SouthWest = &Node{Boundary: b, Capacity: n.Capacity}
 
 	p = &Point{X: origin.X, Y: origin.Y + h}
-	b = &Boundary{Width: w, Height: h, Start: p}
+	b = &Boundary{Width: ww, Height: hh, Start: p}
 	n.SouthEast = &Node{Boundary: b, Capacity: n.Capacity}
 }
 
@@ -84,4 +96,30 @@ func (n *Node) Insert(p *Point) (success bool) {
 	}
 
 	return false
+}
+
+// Query returns all points within a boundary
+func (n *Node) Query(r *Boundary) (points []*Point) {
+	points = make([]*Point, 0)
+
+	if !n.Boundary.IntersectsWith(r) {
+		return
+	}
+
+	for _, p := range n.Points {
+		if r.ContainsPoint(p) {
+			points = append(points, p)
+		}
+	}
+
+	if n.NorthWest == nil {
+		return
+	}
+
+	points = append(points, n.NorthWest.Query(r)...)
+	points = append(points, n.NorthEast.Query(r)...)
+	points = append(points, n.SouthWest.Query(r)...)
+	points = append(points, n.SouthEast.Query(r)...)
+
+	return
 }
