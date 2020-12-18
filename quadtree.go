@@ -60,11 +60,11 @@ func (n *Node) Subdivide() {
 
 	p = &Point{X: origin.X + w, Y: origin.Y + h}
 	b = &Boundary{Width: w, Height: hh, Start: p}
-	n.SouthWest = &Node{Boundary: b, Capacity: n.Capacity}
+	n.SouthEast = &Node{Boundary: b, Capacity: n.Capacity}
 
 	p = &Point{X: origin.X, Y: origin.Y + h}
 	b = &Boundary{Width: ww, Height: hh, Start: p}
-	n.SouthEast = &Node{Boundary: b, Capacity: n.Capacity}
+	n.SouthWest = &Node{Boundary: b, Capacity: n.Capacity}
 }
 
 // Insert inserts a point to a Quadtree Node
