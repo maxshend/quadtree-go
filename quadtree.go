@@ -1,6 +1,8 @@
 package quadtree
 
-import "math"
+import (
+	"math"
+)
 
 // Point represents a point in a 2-dimensional space
 type Point struct {
@@ -82,33 +84,18 @@ func (n *Node) Insert(p *Point) (success bool) {
 		n.Subdivide()
 	}
 
-	if n.NorthWest.Insert(p) {
-		return true
-	}
-	if n.NorthEast.Insert(p) {
-		return true
-	}
-	if n.SouthWest.Insert(p) {
-		return true
-	}
-	if n.SouthEast.Insert(p) {
-		return true
-	}
-
-	return false
+	return n.NorthWest.Insert(p) || n.NorthEast.Insert(p) || n.SouthWest.Insert(p) || n.SouthEast.Insert(p)
 }
 
 // Query returns all points within a boundary
-func (n *Node) Query(r *Boundary) (points []*Point) {
-	points = make([]*Point, 0)
-
+func (n *Node) Query(r *Boundary, points *[]*Point) {
 	if !n.Boundary.IntersectsWith(r) {
 		return
 	}
 
 	for _, p := range n.Points {
 		if r.ContainsPoint(p) {
-			points = append(points, p)
+			*points = append(*points, p)
 		}
 	}
 
@@ -116,10 +103,10 @@ func (n *Node) Query(r *Boundary) (points []*Point) {
 		return
 	}
 
-	points = append(points, n.NorthWest.Query(r)...)
-	points = append(points, n.NorthEast.Query(r)...)
-	points = append(points, n.SouthWest.Query(r)...)
-	points = append(points, n.SouthEast.Query(r)...)
+	n.NorthWest.Query(r, points)
+	n.NorthEast.Query(r, points)
+	n.SouthWest.Query(r, points)
+	n.SouthEast.Query(r, points)
 
 	return
 }

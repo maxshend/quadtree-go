@@ -1,8 +1,10 @@
 package quadtree
 
 import (
+	"math/rand"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestContainsPoint(t *testing.T) {
@@ -163,7 +165,10 @@ func TestQuery(t *testing.T) {
 		}
 	}
 
-	got := q.Query(qb)
+	points := make([]*Point, 0)
+	q.Query(qb, &points)
+	got := points
+
 	expected := []*Point{&Point{1, 1}, &Point{2, 1}, &Point{1, 2}, &Point{2, 2}}
 
 	if len(got) != len(expected) {
@@ -183,5 +188,38 @@ func TestQuery(t *testing.T) {
 		if !found {
 			t.Errorf("expected to got %v point", e)
 		}
+	}
+}
+
+func BenchmarkQuery(bench *testing.B) {
+	rand.Seed(time.Now().UnixNano())
+
+	width, height := 800, 800
+	cap := 32
+	region := 259
+	b := &Boundary{Start: &Point{0, 0}, Width: width, Height: height}
+	q := &Node{Boundary: b, Capacity: cap}
+	qb := &Boundary{&Point{0, 0}, region, region}
+	array := make([][]bool, height)
+
+	for y := 0; y < height; y++ {
+		array[y] = make([]bool, width)
+
+		for x := 0; x < width; x++ {
+			value := rand.Intn(2) == 1
+			array[y][x] = value
+
+			if value {
+				q.Insert(&Point{x, y})
+			}
+		}
+	}
+
+	points := make([]*Point, 0)
+
+	bench.ResetTimer()
+
+	for i := 0; i < bench.N; i++ {
+		q.Query(qb, &points)
 	}
 }
